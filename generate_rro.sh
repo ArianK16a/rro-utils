@@ -31,7 +31,7 @@ if ! apktool d "${SRC}" -o "${TMPDIR}"/out &> "${log}"; then
     exit
 fi
 
-rm -rf mkdir ./overlay/${name}
+rm -rf ./overlay/${name}
 mkdir ./overlay/${name}
 
 # Copy resources from apktool dump
