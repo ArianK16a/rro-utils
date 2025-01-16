@@ -1,7 +1,6 @@
 #!/usr/bin/bash
 #
-# Copyright (C) 2022 The LineageOS Project
-#
+# SPDX-FileCopyrightText: 2022 The LineageOS Project
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -133,7 +132,7 @@ function init_file () {
 
     printf -- "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" >> ${folder}/${name}
     printf -- "<!--\n" >> ${folder}/${name}
-    printf -- "     Copyright (C) $(date +%Y) The LineageOS Project\n" >> ${folder}/${name}
+    printf -- "     SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project\n" >> ${folder}/${name}
     printf -- "     SPDX-License-Identifier: Apache-2.0\n" >> ${folder}/${name}
     printf -- "-->\n" >> ${folder}/${name}
     printf -- "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n" >> ${folder}/${name}
@@ -147,10 +146,10 @@ function update_header () {
     if [[ -z $(sed -n "/?xml/p" ${folder}/${name}) ]]; then
         sed -i "1 i\<?xml version=\"1.0\" encoding=\"utf-8\"?>" ${folder}/${name}
     fi
-    if [[ -z $(sed -n "/Copyright (C)/p" ${folder}/${name}) ]]; then
+    if [[ -z $(sed -n "/SPDX-FileCopyrightText:/p" ${folder}/${name}) ]]; then
         sed -i "2 i\-->" ${folder}/${name}
         sed -i "2 i\     SPDX-License-Identifier: Apache-2.0" ${folder}/${name}
-        sed -i "2 i\     Copyright (C) $(date +%Y) The LineageOS Project" ${folder}/${name}
+        sed -i "2 i\     SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" ${folder}/${name}
         sed -i "2 i\<!--" ${folder}/${name}
     fi
 }
@@ -270,7 +269,7 @@ done
 if [[ ! -z $(head -n 1 ${RRO_DIR}/AndroidManifest.xml | sed -n "/<manifest/p") ]]; then
     sed -i "1 i\-->" ${RRO_DIR}/AndroidManifest.xml
     sed -i "1 i\     SPDX-License-Identifier: Apache-2.0" ${RRO_DIR}/AndroidManifest.xml
-    sed -i "1 i\     Copyright (C) $(date +%Y) The LineageOS Project" ${RRO_DIR}/AndroidManifest.xml
+    sed -i "1 i\     SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" ${RRO_DIR}/AndroidManifest.xml
     sed -i "1 i\<!--" ${RRO_DIR}/AndroidManifest.xml
 fi
 if [[ ! -z $(head -n 1 ${RRO_DIR}/Android.bp | sed -n "/runtime_resource_overlay/p") ]]; then
@@ -278,7 +277,7 @@ if [[ ! -z $(head -n 1 ${RRO_DIR}/Android.bp | sed -n "/runtime_resource_overlay
     sed -i "1 i\\/\/" ${RRO_DIR}/Android.bp
     sed -i "1 i\\/\/ SPDX-License-Identifier: Apache-2.0" ${RRO_DIR}/Android.bp
     sed -i "1 i\\/\/" ${RRO_DIR}/Android.bp
-    sed -i "1 i\\/\/ Copyright (C) $(date +%Y) The LineageOS Project" ${RRO_DIR}/Android.bp
+    sed -i "1 i\\/\/ SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" ${RRO_DIR}/Android.bp
     sed -i "1 i\\/\/" ${RRO_DIR}/Android.bp
 fi
 
