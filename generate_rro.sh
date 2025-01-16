@@ -57,6 +57,8 @@ partition=$(echo $SRC | sed -n "s/.*\/\([a-z]\+\)\/overlay.*/\1/gp")
 echo "partition is: ${partition}" > "${log}"
 if echo "product system_ext" | grep -w -q ${partition}; then
     printf "\n    ${partition}_specific: true," >> ./overlay/${name}/Android.bp
+elif echo "odm" | grep -w -q ${partition}; then
+    printf "\n    device_specific: true," >> ./overlay/${name}/Android.bp
 elif echo "vendor" | grep -w -q ${partition}; then
     printf "\n    vendor: true," >> ./overlay/${name}/Android.bp
 fi
