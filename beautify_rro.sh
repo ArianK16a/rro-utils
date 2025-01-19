@@ -74,14 +74,9 @@ function add_aosp_comments () {
                                 -e 's/[<>]/ /g' \
                                 -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' \
                                 -e 's/"/\\"/g' | while read -r name; do
-        if ! grep -qr "${name//name=/name[ ]*=}" "$SRC_DIR"; then
-            echo "[$(basename "$RRO_DIR")] (add_aosp_comments) Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}" | tr -d '\\'
-            continue
-        fi
-
         get_src_path "$name"
         if [[ ! -f ${src_path} ]]; then
-            echo "src_path: $src_path does not exist, skipping" > "$log"
+            echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}" | tr -d '\\'
             continue
         fi
 
@@ -197,14 +192,9 @@ find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d | while read -r folder; do
                                 -e 's/[<>]/ /g' \
                                 -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' \
                                 -e 's/"/\\"/g' | while read -r name; do
-            if ! grep -qr "${name//name=/name[ ]*=}" "$SRC_DIR"; then
-                echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}" | tr -d '\\'
-                continue
-            fi
-
             get_src_path "$name"
             if [[ ! -f ${src_path} ]]; then
-                echo "src_path: $src_path does not exist, skipping" > "$log"
+                echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}" | tr -d '\\'
                 continue
             fi
 
