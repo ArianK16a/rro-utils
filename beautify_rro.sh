@@ -206,7 +206,7 @@ function close_resource_file () {
 }
 
 
-find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d | while read -r folder; do
+find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d -not -path "${RRO_DIR}/res/xml" | while read -r folder; do
     # Prepare files
     find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
         # Merge arrays into one line
