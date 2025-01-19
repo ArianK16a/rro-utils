@@ -119,6 +119,29 @@ function add_aosp_comments () {
     rm "${TMPDIR}/$(basename "$file").bak"
 }
 
+function check_default_values () {
+    local file="$1"
+
+    rg "name=" "$file" | sed -e 's/translatable="false"/ /g' \
+                                -e 's/[<>]/ /g' \
+                                -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
+        get_src_path "$name"
+        if [[ ! -f ${src_path} ]]; then
+            echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
+            continue
+        fi
+
+        xml_type="$(sed -n "/${name//name=/name[ ]*=}/p" "$file" | sed "s/.*<\([-a-Z]\+\) .*/\1/g")"
+        xml_name="$(sed -n "/${name//name=/name[ ]*=}/p" "$file" | sed "s/.*name[ ]*=\"\([-a-Z0-9_]\+\)\".*/\1/g")"
+
+        default_value="$(xmlstarlet sel -t -v "//${xml_type}[@name='${xml_name}']" "$src_path")"
+        overlay_value="$(xmlstarlet sel -t -v "//${xml_type}[@name='${xml_name}']" "$file")"
+        if [[ "$default_value" == "$overlay_value" ]]; then
+            echo "overlay $xml_name of type $xml_type is equal to the default value: $default_value"
+        fi
+    done
+}
+
 function init_file () {
     local name=${1}
     if [[ -f ${folder}/${name} ]]; then
@@ -255,6 +278,8 @@ find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d | while read -r folder; do
         XMLLINT_INDENT="    " xmllint --format "$file" | sponge "$file"
 
         add_aosp_comments "$file"
+
+        check_default_values "$file"
 
         # Replace "\> with " \> to follow the recommended style
         sed -i "s/\"\/>/\" \/>/g" "$file"
