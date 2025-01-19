@@ -61,7 +61,7 @@ function get_src_path () {
     # Allow space between "name" and "="
     # Ignore symbols.xml and overlayable.xml files since these don't contain the actual values
     # Also ignore values-mcc as these folders include carrier specific things
-    src_path=$(grep -rG "${name//name=/name[ ]*=}" "$SRC_DIR" | grep -v symbols.xml | grep -v overlayable.xml | sed "s/://g" | awk '{print $1}' | grep -v "\-mcc" | grep -v "values-" | LC_ALL=c sort | head -1)
+    src_path=$(rg -e "${name//name=/name[ ]*=}" "$SRC_DIR" | grep -v symbols.xml | grep -v overlayable.xml | sed "s/://g" | awk '{print $1}' | grep -v "\-mcc" | grep -v "values-" | LC_ALL=c sort | head -1)
 }
 
 function add_aosp_comments () {
@@ -70,13 +70,12 @@ function add_aosp_comments () {
     # Create a backup
     cp "$file" "${TMPDIR}/$(basename "$file").bak"
 
-    grep -r "name=" "$file" | sed -e 's/translatable="false"/ /g' \
+    rg "name=" "$file" | sed -e 's/translatable="false"/ /g' \
                                 -e 's/[<>]/ /g' \
-                                -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' \
-                                -e 's/"/\\"/g' | while read -r name; do
+                                -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
         get_src_path "$name"
         if [[ ! -f ${src_path} ]]; then
-            echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}" | tr -d '\\'
+            echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
             continue
         fi
 
@@ -188,13 +187,12 @@ find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d | while read -r folder; do
             continue
         fi
 
-        grep -r "name=" "$file" | sed -e 's/translatable="false"/ /g' \
+        rg "name=" "$file" | sed -e 's/translatable="false"/ /g' \
                                 -e 's/[<>]/ /g' \
-                                -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' \
-                                -e 's/"/\\"/g' | while read -r name; do
+                                -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
             get_src_path "$name"
             if [[ ! -f ${src_path} ]]; then
-                echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}" | tr -d '\\'
+                echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
                 continue
             fi
 
@@ -231,7 +229,9 @@ find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d | while read -r folder; do
                 continue
             fi
 
-            grep -r "name=" "$file" | sed "s/[<>]/ /g" | sed "s/\///g" | sed "s/.*\(name=\"[-._a-Z0-9]\+\"\).*/\1/g" | sed "s/\"/\\\\\"/g" | while read -r name; do
+            rg "name=" "$file" | sed -e "s/[<>]/ /g" \
+                                    -e "s/\///g" \
+                                    -e "s/.*\(name=\"[-._a-Z0-9]\+\"\).*/\1/g" | while read -r name; do
                 get_src_path "$name"
                 if [[ ! -f "$src_path" ]]; then
                     line=0
