@@ -52,6 +52,26 @@ else
     echo "Using source: $SRC_DIR" > "$log"
 fi
 
+function colored_echo() {
+    local COLOR=$1
+    shift
+    if ! [[ $COLOR =~ ^[0-9]$ ]]; then
+        case $(echo "$COLOR" | tr '[:upper:]' '[:lower:]') in
+            black) COLOR=0 ;;
+            red) COLOR=1 ;;
+            green) COLOR=2 ;;
+            yellow) COLOR=3 ;;
+            blue) COLOR=4 ;;
+            magenta) COLOR=5 ;;
+            cyan) COLOR=6 ;;
+            white | *) COLOR=7 ;; # white or invalid color
+        esac
+    fi
+    if [ -t 1 ]; then tput setaf "$COLOR"; fi
+    printf '%s\n' "$*"
+    if [ -t 1 ]; then tput sgr0; fi
+}
+
 # Create a temporary working directory
 TMPDIR=$(mktemp -d)
 
@@ -75,7 +95,7 @@ function add_aosp_comments () {
                                 -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
         get_src_path "$name"
         if [[ ! -f ${src_path} ]]; then
-            echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
+            colored_echo yellow "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
             continue
         fi
 
@@ -86,13 +106,13 @@ function add_aosp_comments () {
 
         line=$(sed -n "/.*${name//name=/name[ ]*=}.*/=" "$src_path" | head -1)
         if [[ -z $(sed -n "$((line - 1))p" "$src_path" | sed -n "/.*-->.*/p") ]]; then
-            echo "Did not find ending string before $name in $src_path" > "$log"
+            colored_echo red "Did not find ending string before $name in $src_path" > "$log"
             continue
         fi
 
         line=$(sed -n "/.*${name}.*/=" "$file" | head -1)
         if [[ -n $(sed -n "$((line - 1))p" "$file" | sed -n "/.*-->.*/p") ]]; then
-            echo "There is already a comment for $name in $file, skipping" > "$log"
+            colored_echo green "There is already a comment for $name in $file, skipping" > "$log"
             continue
         fi
 
@@ -113,7 +133,7 @@ function add_aosp_comments () {
     done
 
     if ! xmllint --format "$file" &> /dev/null; then
-        echo "We broke ${file}. Restoring backup"
+        colored_echo red "We broke ${file}. Restoring backup"
         cp "${TMPDIR}/$(basename "$file").bak" "$file"
     fi
     rm "${TMPDIR}/$(basename "$file").bak"
@@ -127,7 +147,7 @@ function check_default_values () {
                                 -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
         get_src_path "$name"
         if [[ ! -f ${src_path} ]]; then
-            echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
+            colored_echo yellow "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
             continue
         fi
 
@@ -137,7 +157,7 @@ function check_default_values () {
         default_value="$(xmlstarlet sel -t -v "//${xml_type}[@name='${xml_name}']" "$src_path")"
         overlay_value="$(xmlstarlet sel -t -v "//${xml_type}[@name='${xml_name}']" "$file")"
         if [[ "$default_value" == "$overlay_value" ]]; then
-            echo "overlay $xml_name of type $xml_type is equal to the default value: $default_value"
+            colored_echo cyan "overlay $xml_name of type $xml_type is equal to the default value: $default_value"
         fi
     done
 }
@@ -215,7 +235,7 @@ find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d | while read -r folder; do
                                 -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
             get_src_path "$name"
             if [[ ! -f ${src_path} ]]; then
-                echo "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
+                colored_echo yellow "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
                 continue
             fi
 
