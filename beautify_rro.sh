@@ -269,7 +269,7 @@ if [[ -n $(head -n 1 "${RRO_DIR}/AndroidManifest.xml" | sed -n "/<manifest/p") ]
     sed -i "1 i\<!--" "${RRO_DIR}/AndroidManifest.xml"
 fi
 if [[ -n $(head -n 1 "${RRO_DIR}/Android.bp" | sed -n "/runtime_resource_overlay/p") ]]; then
-    sed -i '1i\\' "${RRO_DIR}/Android.bp"
+    sed -i "1 i\\\\" "${RRO_DIR}/Android.bp"
     sed -i "1 i\\/\/" "${RRO_DIR}/Android.bp"
     sed -i "1 i\\/\/ SPDX-License-Identifier: Apache-2.0" "${RRO_DIR}/Android.bp"
     sed -i "1 i\\/\/ SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" "${RRO_DIR}/Android.bp"
