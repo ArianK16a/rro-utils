@@ -74,9 +74,11 @@ printf "\n}\n" >> ./overlay/${name}/Android.bp
 # Get attributes from AndroidManifest.xml
 package=$(sed -n "s/.*package=\"\([a-z.]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
 targetPackage=$(sed -n "s/.*targetPackage=\"\([a-z.]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
-targetName=$(sed -n "s/.*targetName=\"\([a-zA-Z.]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
+targetName=$(sed -n "s/.*targetName=\"\([a-Z.]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
 isStatic=$(sed -n "s/.*isStatic=\"\([a-z]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
 priority=$(sed -n "s/.*priority=\"\([0-9]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
+requiredSystemPropertyName=$(sed -n "s/.*requiredSystemPropertyName=\"\([-a-Z0-9._]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
+requiredSystemPropertyValue=$(sed -n "s/.*requiredSystemPropertyValue=\"\([-a-Z0-9._]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
 
 # Begin writing AndroidManifest.xml
 printf "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"
@@ -93,6 +95,12 @@ if [[ ! -z "${isStatic}" ]]; then
 fi
 if [[ ! -z "${priority}" ]]; then
     optional_properties="${optional_properties}\n                   android:priority=\"${priority}\""
+fi
+if [[ ! -z "${requiredSystemPropertyName}" ]]; then
+    optional_properties="${optional_properties}\n                   android:requiredSystemPropertyName=\"${requiredSystemPropertyName}\""
+fi
+if [[ ! -z "${requiredSystemPropertyValue}" ]]; then
+    optional_properties="${optional_properties}\n                   android:requiredSystemPropertyValue=\"${requiredSystemPropertyValue}\""
 fi
 printf "${optional_properties}/>\n" >> ./overlay/${name}/AndroidManifest.xml
 
