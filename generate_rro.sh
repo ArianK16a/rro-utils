@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-DEBUG=0
+DEBUG="${DEBUG:-0}"
 if [[ ${DEBUG} != 0 ]]; then
     log="/dev/tty"
 else
@@ -47,14 +47,12 @@ printf "runtime_resource_overlay {
 
 # Set theme if necessary
 theme=$(echo $SRC | sed -n "s/.*overlay\/\([a-zA-Z0-9_-]\+\)\/.*\.apk/\1/gp")
-echo "theme is: ${theme}" > "${log}"
 if [[ ! -z "${theme}" ]]; then
     printf "\n    theme: \"${theme}\"," >> ./overlay/${name}/Android.bp
 fi
 
 # Choose the partition
 partition=$(echo $SRC | sed -n "s/.*\/\([a-z_]\+\)\/overlay.*/\1/gp")
-echo "partition is: ${partition}" > "${log}"
 if echo "product system_ext" | grep -w -q ${partition}; then
     printf "\n    ${partition}_specific: true," >> ./overlay/${name}/Android.bp
 elif echo "odm" | grep -w -q ${partition}; then
@@ -79,12 +77,6 @@ targetPackage=$(sed -n "s/.*targetPackage=\"\([a-z.]\+\)\".*/\1/gp" ${TMPDIR}/ou
 targetName=$(sed -n "s/.*targetName=\"\([a-zA-Z.]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
 isStatic=$(sed -n "s/.*isStatic=\"\([a-z]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
 priority=$(sed -n "s/.*priority=\"\([0-9]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
-
-echo "package is: ${package}" > "${log}"
-echo "targetPackage is: ${targetPackage}" > "${log}"
-echo "targetName is: ${targetName}" > "${log}"
-echo "isStatic is: ${isStatic}" > "${log}"
-echo "priority is: ${priority}" > "${log}"
 
 # Begin writing AndroidManifest.xml
 printf "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-DEBUG=0
+DEBUG="${DEBUG:-0}"
 if [[ ${DEBUG} != 0 ]]; then
     log="/dev/tty"
 else
@@ -24,8 +24,6 @@ targetPackage=$(sed -n "s/.*targetPackage=\"\([a-z.]\+\)\".*/\1/gp" ${RRO_DIR}/A
 if [[ ! -z ${2} ]]; then
     SRC_DIR=${2}
 else
-    echo "Guessing source for $targetPackage" > ${log}
-
     case "${targetPackage}" in
     "android")
         SRC_DIR=${ANDROID_ROOT}/frameworks/base/core/res
