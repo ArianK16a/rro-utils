@@ -71,41 +71,43 @@ fi
 # Finish the Android.bp
 printf "\n}\n" >> ./overlay/${name}/Android.bp
 
-# Get attributes from AndroidManifest.xml
-package=$(sed -n "s/.*package=\"\([a-z.]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
-targetPackage=$(sed -n "s/.*targetPackage=\"\([a-z.]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
-targetName=$(sed -n "s/.*targetName=\"\([a-Z.]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
-isStatic=$(sed -n "s/.*isStatic=\"\([a-z]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
-priority=$(sed -n "s/.*priority=\"\([0-9]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
-requiredSystemPropertyName=$(sed -n "s/.*requiredSystemPropertyName=\"\([-a-Z0-9._]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
-requiredSystemPropertyValue=$(sed -n "s/.*requiredSystemPropertyValue=\"\([-a-Z0-9._]\+\)\".*/\1/gp" ${TMPDIR}/out/AndroidManifest.xml)
+# Extract attributes from AndroidManifest.xml
+manifest="${TMPDIR}/out/AndroidManifest.xml"
+output="./overlay/${name}/AndroidManifest.xml"
+
+extract_attribute_value() {
+    local attribute="$1"
+    sed -n "s/.*${attribute}=\"\([a-zA-Z0-9._-]\+\)\".*/\1/p" "$manifest"
+}
+
+# Required attributes
+package=$(extract_attribute_value "package")
+targetPackage=$(extract_attribute_value "android:targetPackage")
+
+optional_attributes=(
+    "android:targetName"
+    "android:isStatic"
+    "android:priority"
+    "android:requiredSystemPropertyName"
+    "android:requiredSystemPropertyValue"
+)
+optional_properties=()
+for attribute in "${optional_attributes[@]}"; do
+    value=$(extract_attribute_value "$attribute")
+    [[ -n "$value" ]] && optional_properties+=("$attribute=\"$value\"")
+done
 
 # Begin writing AndroidManifest.xml
-printf "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"
-    package=\"${package}\">
-    <overlay android:targetPackage=\"${targetPackage}\"" > ./overlay/${name}/AndroidManifest.xml
-
-# Write optional properties and close the overlay block
-optional_properties=""
-if [[ ! -z "${targetName}" ]]; then
-    optional_properties="${optional_properties}\n                   android:targetName=\"${targetName}\""
-fi
-if [[ ! -z "${isStatic}" ]]; then
-    optional_properties="${optional_properties}\n                   android:isStatic=\"${isStatic}\""
-fi
-if [[ ! -z "${priority}" ]]; then
-    optional_properties="${optional_properties}\n                   android:priority=\"${priority}\""
-fi
-if [[ ! -z "${requiredSystemPropertyName}" ]]; then
-    optional_properties="${optional_properties}\n                   android:requiredSystemPropertyName=\"${requiredSystemPropertyName}\""
-fi
-if [[ ! -z "${requiredSystemPropertyValue}" ]]; then
-    optional_properties="${optional_properties}\n                   android:requiredSystemPropertyValue=\"${requiredSystemPropertyValue}\""
-fi
-printf "${optional_properties}/>\n" >> ./overlay/${name}/AndroidManifest.xml
-
-# Close the manifest
-printf "</manifest>\n" >> ./overlay/${name}/AndroidManifest.xml
+cat <<EOF > "$output"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="${package}">
+    <overlay android:targetPackage="${targetPackage}"$(
+for property in "${optional_properties[@]}"; do
+    printf '\n                   %s' "$property"
+done
+)/>
+</manifest>
+EOF
 
 # Clear the temporary working directory
 rm -rf "${TMPDIR}"
