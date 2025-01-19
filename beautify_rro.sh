@@ -155,7 +155,7 @@ function check_default_values () {
         default_value="$(xmlstarlet sel -t -v "//${xml_type}[@name='${xml_name}']" "$src_path")"
         overlay_value="$(xmlstarlet sel -t -v "//${xml_type}[@name='${xml_name}']" "$file")"
         if [[ "$default_value" == "$overlay_value" ]]; then
-            colored_echo cyan "overlay $xml_name of type $xml_type is equal to the default value: $default_value"
+            colored_echo cyan "[$(basename "$RRO_DIR")] overlay $xml_name of type $xml_type is equal to the default value: $default_value"
         fi
     done
 }
