@@ -95,7 +95,6 @@ function add_aosp_comments () {
                                 -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
         get_src_path "$name"
         if [[ ! -f ${src_path} ]]; then
-            colored_echo yellow "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
             continue
         fi
 
@@ -147,7 +146,6 @@ function check_default_values () {
                                 -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
         get_src_path "$name"
         if [[ ! -f ${src_path} ]]; then
-            colored_echo yellow "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
             continue
         fi
 
