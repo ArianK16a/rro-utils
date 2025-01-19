@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 #
-# SPDX-FileCopyrightText: 2022 The LineageOS Project
+# SPDX-FileCopyrightText: 2022, 2025 The LineageOS Project
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -53,7 +53,7 @@ if [[ ! -z "${theme}" ]]; then
 fi
 
 # Choose the partition
-partition=$(echo $SRC | sed -n "s/.*\/\([a-z]\+\)\/overlay.*/\1/gp")
+partition=$(echo $SRC | sed -n "s/.*\/\([a-z_]\+\)\/overlay.*/\1/gp")
 echo "partition is: ${partition}" > "${log}"
 if echo "product system_ext" | grep -w -q ${partition}; then
     printf "\n    ${partition}_specific: true," >> ./overlay/${name}/Android.bp
