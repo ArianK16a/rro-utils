@@ -233,7 +233,7 @@ find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d | while read -r folder; do
                                 -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
             get_src_path "$name"
             if [[ ! -f ${src_path} ]]; then
-                colored_echo yellow "[$(basename "$RRO_DIR")] Resource ${name#*=} not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
+                colored_echo yellow "[$(basename "$RRO_DIR")] Resource ${name#*=} from $file not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
                 continue
             fi
 
