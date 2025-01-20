@@ -32,9 +32,11 @@ vendor_rros=" \
 "
 
 function generate_rro () {
-    local path=${1}
-    bash ${script_dir}/generate_rro.sh ${path}
-    bash ${script_dir}/beautify_rro.sh overlay/$(basename ${path} | sed "s/.apk//g")
+    local path="$1"
+    local overlay_name=$(basename "$path" | sed "s/.apk//g" | sed -E "s/_(Sys|Vendor)//g")
+
+    bash "${script_dir}/generate_rro.sh" "$path" "$overlay_name"
+    bash "${script_dir}/beautify_rro.sh" "overlay/${overlay_name}"
 }
 
 for rro in ${product_rros}; do
