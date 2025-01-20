@@ -12,7 +12,7 @@ else
 fi
 
 if [[ -z "$1" ]]; then
-    echo "usage: beautify_rro.sh /path/to/rro_source"
+    echo "usage: beautify_rro.sh /path/to/rro_source [/path/to/rro_source2 [...]]"
     exit
 fi
 
@@ -259,77 +259,84 @@ function sort_resources_by_aosp_ordering () {
     sed -i "s/[0-9]\+\(  .*\)/\1/g" "$file"
 }
 
-RRO_DIR="$1"
-get_src_dir "$RRO_DIR"
+for RRO_DIR in "$@"; do
+    if [[ ! -d $RRO_DIR ]]; then
+        colored_echo red "skipping input $RRO_DIR"
+        continue
+    fi
 
-find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d -not -path "${RRO_DIR}/res/xml" | while read -r folder; do
-    # Prepare files
-    find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
-        # Merge arrays into one line
-        xml_pp -s record_c "$file" | sponge "$file"
+    get_src_dir "$RRO_DIR"
 
-        # Remove comments
-        xmlstarlet c14n --without-comments "$file" | sponge "$file"
+    find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d -not -path "${RRO_DIR}/res/xml" | while read -r folder; do
+        # Prepare files
+        find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
+            # Merge arrays into one line
+            xml_pp -s record_c "$file" | sponge "$file"
 
-        # Merge strings into one line
-        sed -i "/^[[:space:]]*$/d" "$file"
-        sed -z "s/\\n/\\\n/g" "$file" | sed -z "s/>\\\n/>\n/g" | sponge "$file"
+            # Remove comments
+            xmlstarlet c14n --without-comments "$file" | sponge "$file"
 
-        # Remove the closing tag to allow appending resources
-        open_resource_file "$(basename "$file")"
-    done
+            # Merge strings into one line
+            sed -i "/^[[:space:]]*$/d" "$file"
+            sed -z "s/\\n/\\\n/g" "$file" | sed -z "s/>\\\n/>\n/g" | sponge "$file"
 
-    move_resources_to_aosp_filenames "$folder"
+            # Remove the closing tag to allow appending resources
+            open_resource_file "$(basename "$file")"
+        done
 
-    # Sort the files
-    find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
-        # Add the closing tag again
-        close_resource_file "$(basename "$file")"
+        move_resources_to_aosp_filenames "$folder"
 
-        update_header "$(basename "$file")"
+        # Sort the files
+        find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
+            # Add the closing tag again
+            close_resource_file "$(basename "$file")"
 
-        if ! xmllint --format "$file" &> /dev/null; then
-            echo "$file is not a valid XML, broke the rro"
-            continue
-        fi
+            update_header "$(basename "$file")"
 
-        # Don't sort files that don't contain resources
-        if [[ -n $(sed -n "/^<resources/p" "$file") ]]; then
-            if [[ -z $(sed -n "/name=\"/p" "$file") ]]; then
-                echo "$file is empty after moving resources, remove it" > "$log"
-                rm "$file"
+            if ! xmllint --format "$file" &> /dev/null; then
+                echo "$file is not a valid XML, broke the rro"
                 continue
             fi
 
-            sort_resources_by_aosp_ordering "$file"
-        fi
+            # Don't sort files that don't contain resources
+            if [[ -n $(sed -n "/^<resources/p" "$file") ]]; then
+                if [[ -z $(sed -n "/name=\"/p" "$file") ]]; then
+                    echo "$file is empty after moving resources, remove it" > "$log"
+                    rm "$file"
+                    continue
+                fi
 
-        # Expand arrays again
-        XMLLINT_INDENT="    " xmllint --format "$file" | sponge "$file"
+                sort_resources_by_aosp_ordering "$file"
+            fi
 
-        add_aosp_comments "$file"
+            # Expand arrays again
+            XMLLINT_INDENT="    " xmllint --format "$file" | sponge "$file"
 
-        check_default_values "$file"
+            add_aosp_comments "$file"
 
-        # Replace "\> with " \> to follow the recommended style
-        sed -i "s/\"\/>/\" \/>/g" "$file"
+            check_default_values "$file"
+
+            # Replace "\> with " \> to follow the recommended style
+            sed -i "s/\"\/>/\" \/>/g" "$file"
+        done
     done
-done
 
-# Add copyright to AndroidManifest.xml and Android.bp
-if [[ -n $(head -n 1 "${RRO_DIR}/AndroidManifest.xml" | sed -n "/<manifest/p") ]]; then
-    sed -i "1 i\-->" "${RRO_DIR}/AndroidManifest.xml"
-    sed -i "1 i\     SPDX-License-Identifier: Apache-2.0" "${RRO_DIR}/AndroidManifest.xml"
-    sed -i "1 i\     SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" "${RRO_DIR}/AndroidManifest.xml"
-    sed -i "1 i\<!--" "${RRO_DIR}/AndroidManifest.xml"
-fi
-if [[ -n $(head -n 1 "${RRO_DIR}/Android.bp" | sed -n "/runtime_resource_overlay/p") ]]; then
-    sed -i "1 i\\\\" "${RRO_DIR}/Android.bp"
-    sed -i "1 i\\/\/" "${RRO_DIR}/Android.bp"
-    sed -i "1 i\\/\/ SPDX-License-Identifier: Apache-2.0" "${RRO_DIR}/Android.bp"
-    sed -i "1 i\\/\/ SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" "${RRO_DIR}/Android.bp"
-    sed -i "1 i\\/\/" "${RRO_DIR}/Android.bp"
-fi
+    # Add copyright to AndroidManifest.xml and Android.bp
+    if [[ -n $(head -n 1 "${RRO_DIR}/AndroidManifest.xml" | sed -n "/<manifest/p") ]]; then
+        sed -i "1 i\-->" "${RRO_DIR}/AndroidManifest.xml"
+        sed -i "1 i\     SPDX-License-Identifier: Apache-2.0" "${RRO_DIR}/AndroidManifest.xml"
+        sed -i "1 i\     SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" "${RRO_DIR}/AndroidManifest.xml"
+        sed -i "1 i\<!--" "${RRO_DIR}/AndroidManifest.xml"
+    fi
+    if [[ -n $(head -n 1 "${RRO_DIR}/Android.bp" | sed -n "/runtime_resource_overlay/p") ]]; then
+        sed -i "1 i\\\\" "${RRO_DIR}/Android.bp"
+        sed -i "1 i\\/\/" "${RRO_DIR}/Android.bp"
+        sed -i "1 i\\/\/ SPDX-License-Identifier: Apache-2.0" "${RRO_DIR}/Android.bp"
+        sed -i "1 i\\/\/ SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" "${RRO_DIR}/Android.bp"
+        sed -i "1 i\\/\/" "${RRO_DIR}/Android.bp"
+    fi
+
+done
 
 # Clear the temporary working directory
 rm -rf "$TMPDIR"
