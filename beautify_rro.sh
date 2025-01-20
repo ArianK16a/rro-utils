@@ -12,7 +12,7 @@ else
 fi
 
 if [[ -z "$1" ]]; then
-    echo "usage: beautify_rro.sh /path/to/rro_source [/path/to/original_source]"
+    echo "usage: beautify_rro.sh /path/to/rro_source"
     exit
 fi
 
@@ -21,29 +21,25 @@ ANDROID_ROOT="../../.."
 RRO_DIR="$1"
 SRC_DIR=""
 targetPackage=$(sed -n "s/.*targetPackage=\"\([a-z.]\+\)\".*/\1/gp" "${RRO_DIR}"/AndroidManifest.xml)
-if [[ -n "$2" ]]; then
-    SRC_DIR="$2"
-else
-    case "$targetPackage" in
-    "android")
-        SRC_DIR="${ANDROID_ROOT}/frameworks/base/core/res"
-        ;;
-    "com.android.systemui")
-        SRC_DIR="${ANDROID_ROOT}/frameworks/base/packages/SystemUI"
-        ;;
-    "com.android.providers.settings")
-        SRC_DIR="${ANDROID_ROOT}/frameworks/base/packages/SettingsProvider"
-        ;;
-    "lineageos.platform")
-        SRC_DIR="${ANDROID_ROOT}/lineage-sdk/lineage/res"
-        ;;
-    *)
-        SRC_DIR="$(rg "package=\"${targetPackage}\"" ${ANDROID_ROOT}/packages/ | grep -v install-in-user-type | sed "s/://g" | awk '{print $1}' | sed "s/\(..\/..\/..\/[a-zA-Z0-9]\+\/[a-zA-Z0-9]\+\/[a-zA-Z0-9]\+\).*/\1/g" | head -1)"
-        ;;
-    esac
+case "$targetPackage" in
+"android")
+    SRC_DIR="${ANDROID_ROOT}/frameworks/base/core/res"
+    ;;
+"com.android.systemui")
+    SRC_DIR="${ANDROID_ROOT}/frameworks/base/packages/SystemUI"
+    ;;
+"com.android.providers.settings")
+    SRC_DIR="${ANDROID_ROOT}/frameworks/base/packages/SettingsProvider"
+    ;;
+"lineageos.platform")
+    SRC_DIR="${ANDROID_ROOT}/lineage-sdk/lineage/res"
+    ;;
+*)
+    SRC_DIR="$(rg "package=\"${targetPackage}\"" ${ANDROID_ROOT}/packages/ | grep -v install-in-user-type | sed "s/://g" | awk '{print $1}' | sed "s/\(..\/..\/..\/[a-zA-Z0-9]\+\/[a-zA-Z0-9]\+\/[a-zA-Z0-9]\+\).*/\1/g" | head -1)"
+    ;;
+esac
 
-    echo "Guessed source: $SRC_DIR" > "$log"
-fi
+echo "Guessed source: $SRC_DIR" > "$log"
 
 if [[ -z "$SRC_DIR" ]] || [[ ! -d "$SRC_DIR" ]]; then
     echo "Could not find source for $targetPackage, last guess: $SRC_DIR"
