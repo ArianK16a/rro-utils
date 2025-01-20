@@ -18,35 +18,8 @@ fi
 
 ANDROID_ROOT="../../.."
 
-RRO_DIR="$1"
-SRC_DIR=""
-targetPackage=$(sed -n "s/.*targetPackage=\"\([a-z.]\+\)\".*/\1/gp" "${RRO_DIR}"/AndroidManifest.xml)
-case "$targetPackage" in
-"android")
-    SRC_DIR="${ANDROID_ROOT}/frameworks/base/core/res"
-    ;;
-"com.android.systemui")
-    SRC_DIR="${ANDROID_ROOT}/frameworks/base/packages/SystemUI"
-    ;;
-"com.android.providers.settings")
-    SRC_DIR="${ANDROID_ROOT}/frameworks/base/packages/SettingsProvider"
-    ;;
-"lineageos.platform")
-    SRC_DIR="${ANDROID_ROOT}/lineage-sdk/lineage/res"
-    ;;
-*)
-    SRC_DIR="$(rg "package=\"${targetPackage}\"" ${ANDROID_ROOT}/packages/ | grep -v install-in-user-type | sed "s/://g" | awk '{print $1}' | sed "s/\(..\/..\/..\/[a-zA-Z0-9]\+\/[a-zA-Z0-9]\+\/[a-zA-Z0-9]\+\).*/\1/g" | head -1)"
-    ;;
-esac
-
-echo "Guessed source: $SRC_DIR" > "$log"
-
-if [[ -z "$SRC_DIR" ]] || [[ ! -d "$SRC_DIR" ]]; then
-    echo "Could not find source for $targetPackage, last guess: $SRC_DIR"
-    exit
-else
-    echo "Using source: $SRC_DIR" > "$log"
-fi
+# Create a temporary working directory
+TMPDIR=$(mktemp -d)
 
 function colored_echo() {
     local COLOR=$1
@@ -68,8 +41,35 @@ function colored_echo() {
     if [ -t 1 ]; then tput sgr0; fi
 }
 
-# Create a temporary working directory
-TMPDIR=$(mktemp -d)
+function get_src_dir () {
+    local rro_dir="$1"
+    SRC_DIR=""
+    targetPackage=$(sed -n "s/.*targetPackage=\"\([a-z.]\+\)\".*/\1/gp" "${rro_dir}"/AndroidManifest.xml)
+    case "$targetPackage" in
+    "android")
+        SRC_DIR="${ANDROID_ROOT}/frameworks/base/core/res"
+        ;;
+    "com.android.systemui")
+        SRC_DIR="${ANDROID_ROOT}/frameworks/base/packages/SystemUI"
+        ;;
+    "com.android.providers.settings")
+        SRC_DIR="${ANDROID_ROOT}/frameworks/base/packages/SettingsProvider"
+        ;;
+    "lineageos.platform")
+        SRC_DIR="${ANDROID_ROOT}/lineage-sdk/lineage/res"
+        ;;
+    *)
+        SRC_DIR="$(rg "package=\"${targetPackage}\"" ${ANDROID_ROOT}/packages/ | grep -v install-in-user-type | sed "s/://g" | awk '{print $1}' | sed "s/\(..\/..\/..\/[a-zA-Z0-9]\+\/[a-zA-Z0-9]\+\/[a-zA-Z0-9]\+\).*/\1/g" | head -1)"
+        ;;
+    esac
+
+    if [[ -z "$SRC_DIR" ]] || [[ ! -d "$SRC_DIR" ]]; then
+        echo "Could not find source for $targetPackage, last guess: $SRC_DIR"
+        exit
+    else
+        echo "Using source: $SRC_DIR" > "$log"
+    fi
+}
 
 function get_src_path () {
     local name="$1"
@@ -201,22 +201,8 @@ function close_resource_file () {
     printf "</resources>\n" >> "${folder}/${name}"
 }
 
-
-find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d -not -path "${RRO_DIR}/res/xml" | while read -r folder; do
-    # Prepare files
-    find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
-        # Merge arrays into one line
-        xml_pp -s record_c "$file" | sponge "$file"
-
-        # Remove comments
-        xmlstarlet c14n --without-comments "$file" | sponge "$file"
-
-        # Merge strings into one line
-        sed -i "/^[[:space:]]*$/d" "$file"
-        sed -z "s/\\n/\\\n/g" "$file" | sed -z "s/>\\\n/>\n/g" | sponge "$file"
-        open_resource_file "$(basename "$file")"
-    done
-
+function move_resources_to_aosp_filenames () {
+    local folder="$1"
     # Move the resources into files matching the aosp location
     find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
         # Don't move elements in files that don't contain resources
@@ -247,8 +233,57 @@ find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d -not -path "${RRO_DIR}/res
         done
     done
 
+}
+
+function sort_resources_by_aosp_ordering () {
+    local file="$1"
+    rg "name=" "$file" | sed -e "s/[<>]/ /g" \
+                            -e "s/\///g" \
+                            -e "s/.*\(name=\"[-._a-Z0-9]\+\"\).*/\1/g" | while read -r name; do
+        get_src_path "$name"
+        if [[ ! -f "$src_path" ]]; then
+            line=0
+        else
+            line=$(grep -Pn -m 1 "${name}" "$src_path" | grep -Po "^[0-9]+")
+        fi
+
+        # Temporary add line number as prefix to the line to sort it
+        sed -i "s/\(.*${name}.*\)/${line}\1/g" "$file"
+    done
+
+    # Sort the resources according to their line numbers in aosp
+    first_real_line=$(grep -Pn -m 1 "<.*name=" "$file" | grep -Po "^[0-9]+")
+    (head -n $((first_real_line - 1)) "$file" && (tail -n+"$first_real_line" "$file" | head -n -1) | LC_ALL=c sort -n && tail -n 1 "$file") | sponge "$file"
+
+    # Drop the line number prefix again
+    sed -i "s/[0-9]\+\(  .*\)/\1/g" "$file"
+}
+
+RRO_DIR="$1"
+get_src_dir "$RRO_DIR"
+
+find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d -not -path "${RRO_DIR}/res/xml" | while read -r folder; do
+    # Prepare files
+    find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
+        # Merge arrays into one line
+        xml_pp -s record_c "$file" | sponge "$file"
+
+        # Remove comments
+        xmlstarlet c14n --without-comments "$file" | sponge "$file"
+
+        # Merge strings into one line
+        sed -i "/^[[:space:]]*$/d" "$file"
+        sed -z "s/\\n/\\\n/g" "$file" | sed -z "s/>\\\n/>\n/g" | sponge "$file"
+
+        # Remove the closing tag to allow appending resources
+        open_resource_file "$(basename "$file")"
+    done
+
+    move_resources_to_aosp_filenames "$folder"
+
     # Sort the files
     find "$folder" -maxdepth 1 -mindepth 1 -type f -name "*.xml" | while read -r file; do
+        # Add the closing tag again
         close_resource_file "$(basename "$file")"
 
         update_header "$(basename "$file")"
@@ -266,26 +301,7 @@ find "${RRO_DIR}/res" -maxdepth 1 -mindepth 1 -type d -not -path "${RRO_DIR}/res
                 continue
             fi
 
-            rg "name=" "$file" | sed -e "s/[<>]/ /g" \
-                                    -e "s/\///g" \
-                                    -e "s/.*\(name=\"[-._a-Z0-9]\+\"\).*/\1/g" | while read -r name; do
-                get_src_path "$name"
-                if [[ ! -f "$src_path" ]]; then
-                    line=0
-                else
-                    line=$(grep -Pn -m 1 "${name}" "$src_path" | grep -Po "^[0-9]+")
-                fi
-
-                # Temporary add line number as prefix to the line to sort it
-                sed -i "s/\(.*${name}.*\)/${line}\1/g" "$file"
-            done
-
-            # Sort the resources according to their line numbers in aosp
-            first_real_line=$(grep -Pn -m 1 "<.*name=" "$file" | grep -Po "^[0-9]+")
-            (head -n $((first_real_line - 1)) "$file" && (tail -n+"$first_real_line" "$file" | head -n -1) | LC_ALL=c sort -n && tail -n 1 "$file") | sponge "$file"
-
-            # Drop the line number prefix again
-            sed -i "s/[0-9]\+\(  .*\)/\1/g" "$file"
+            sort_resources_by_aosp_ordering "$file"
         fi
 
         # Expand arrays again
