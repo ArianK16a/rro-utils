@@ -12,16 +12,16 @@ else
 fi
 
 if [[ -z $1 ]]; then
-    echo usage: generate_rro.sh /path/to/rro.apk
+    echo "usage: generate_rro.sh /path/to/rro.apk [MyOverlayName]"
     exit
 fi
 
 SRC="$1"
 
+name="${2:-$(basename "$SRC" | sed "s/.apk//g")}"
+
 # Create a temporary working directory
 TMPDIR=$(mktemp -d)
-
-name=$(basename "$SRC" | sed "s/.apk//g")
 
 if ! apktool d "$SRC" -o "$TMPDIR"/out &> "$log"; then
     echo "Failed to dump $name"
