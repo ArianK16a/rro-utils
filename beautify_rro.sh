@@ -86,9 +86,7 @@ function add_aosp_comments () {
     # Create a backup
     cp "$file" "${TMPDIR}/$(basename "$file").bak"
 
-    rg "name=" "$file" | sed -e 's/translatable="false"/ /g' \
-                                -e 's/[<>]/ /g' \
-                                -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
+    rg "name=" "$file" | sed -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
         get_src_path "$name"
         if [[ ! -f ${src_path} ]]; then
             continue
@@ -137,9 +135,7 @@ function add_aosp_comments () {
 function check_default_values () {
     local file="$1"
 
-    rg "name=" "$file" | sed -e 's/translatable="false"/ /g' \
-                                -e 's/[<>]/ /g' \
-                                -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
+    rg "name=" "$file" | sed -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
         get_src_path "$name"
         if [[ ! -f ${src_path} ]]; then
             continue
@@ -210,9 +206,7 @@ function move_resources_to_aosp_filenames () {
             continue
         fi
 
-        rg "name=" "$file" | sed -e 's/translatable="false"/ /g' \
-                                -e 's/[<>]/ /g' \
-                                -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
+        rg "name=" "$file" | sed -e 's/.*\(name="[-._a-zA-Z0-9]\+"\).*/\1/' | while read -r name; do
             get_src_path "$name"
             if [[ ! -f ${src_path} ]]; then
                 colored_echo yellow "[$(basename "$RRO_DIR")] Resource ${name#*=} from $file not found in ${SRC_DIR//${ANDROID_ROOT//\//\\\/}\//}"
@@ -237,9 +231,7 @@ function move_resources_to_aosp_filenames () {
 
 function sort_resources_by_aosp_ordering () {
     local file="$1"
-    rg "name=" "$file" | sed -e "s/[<>]/ /g" \
-                            -e "s/\///g" \
-                            -e "s/.*\(name=\"[-._a-Z0-9]\+\"\).*/\1/g" | while read -r name; do
+    rg "name=" "$file" | sed -e "s/.*\(name=\"[-._a-Z0-9]\+\"\).*/\1/g" | while read -r name; do
         get_src_path "$name"
         if [[ ! -f "$src_path" ]]; then
             line=0
