@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# SPDX-FileCopyrightText: 2022, 2025 The LineageOS Project
+# SPDX-FileCopyrightText: The LineageOS Project
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -161,7 +161,7 @@ function init_file () {
     {
         printf -- "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
         printf -- "<!--\n"
-        printf -- "     SPDX-FileCopyrightText: %s The LineageOS Project\n" "$(date +%Y)"
+        printf -- "     SPDX-FileCopyrightText: The LineageOS Project\n"
         printf -- "     SPDX-License-Identifier: Apache-2.0\n"
         printf -- "-->\n"
         printf -- "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n"
@@ -179,7 +179,7 @@ function update_header () {
     if [[ -z $(sed -n "/SPDX-FileCopyrightText:/p" "${folder}/${name}") ]]; then
         sed -i "2 i\-->" "${folder}/${name}"
         sed -i "2 i\     SPDX-License-Identifier: Apache-2.0" "${folder}/${name}"
-        sed -i "2 i\     SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" "${folder}/${name}"
+        sed -i "2 i\     SPDX-FileCopyrightText: The LineageOS Project" "${folder}/${name}"
         sed -i "2 i\<!--" "${folder}/${name}"
     fi
 }
@@ -317,14 +317,14 @@ for RRO_DIR in "$@"; do
     if [[ -n $(head -n 1 "${RRO_DIR}/AndroidManifest.xml" | sed -n "/<manifest/p") ]]; then
         sed -i "1 i\-->" "${RRO_DIR}/AndroidManifest.xml"
         sed -i "1 i\     SPDX-License-Identifier: Apache-2.0" "${RRO_DIR}/AndroidManifest.xml"
-        sed -i "1 i\     SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" "${RRO_DIR}/AndroidManifest.xml"
+        sed -i "1 i\     SPDX-FileCopyrightText: The LineageOS Project" "${RRO_DIR}/AndroidManifest.xml"
         sed -i "1 i\<!--" "${RRO_DIR}/AndroidManifest.xml"
     fi
     if [[ -n $(head -n 1 "${RRO_DIR}/Android.bp" | sed -n "/runtime_resource_overlay/p") ]]; then
         sed -i "1 i\\\\" "${RRO_DIR}/Android.bp"
         sed -i "1 i\\/\/" "${RRO_DIR}/Android.bp"
         sed -i "1 i\\/\/ SPDX-License-Identifier: Apache-2.0" "${RRO_DIR}/Android.bp"
-        sed -i "1 i\\/\/ SPDX-FileCopyrightText: $(date +%Y) The LineageOS Project" "${RRO_DIR}/Android.bp"
+        sed -i "1 i\\/\/ SPDX-FileCopyrightText: The LineageOS Project" "${RRO_DIR}/Android.bp"
         sed -i "1 i\\/\/" "${RRO_DIR}/Android.bp"
     fi
 
