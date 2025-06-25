@@ -141,8 +141,8 @@ function check_default_values () {
             continue
         fi
 
-        xml_type="$(sed -n "/${name//name=/name[ ]*=}/p" "$file" | sed "s/.*<\([-a-Z]\+\) .*/\1/g")"
-        xml_name="$(sed -n "/${name//name=/name[ ]*=}/p" "$file" | sed "s/.*name[ ]*=\"\([-a-Z0-9_]\+\)\".*/\1/g")"
+        xml_type="$(sed -n "/${name//name=/name[ ]*=}/p" "$file" | sed "s/.*<\([-a-zA-Z]\+\) .*/\1/g")"
+        xml_name="$(sed -n "/${name//name=/name[ ]*=}/p" "$file" | sed "s/.*name[ ]*=\"\([-a-zA-Z0-9_]\+\)\".*/\1/g")"
 
         default_value="$(xmlstarlet sel -t -v "//${xml_type}[@name='${xml_name}']" "$src_path")"
         overlay_value="$(xmlstarlet sel -t -v "//${xml_type}[@name='${xml_name}']" "$file")"
@@ -231,7 +231,7 @@ function move_resources_to_aosp_filenames () {
 
 function sort_resources_by_aosp_ordering () {
     local file="$1"
-    rg "name=" "$file" | sed -e "s/.*\(name=\"[-._a-Z0-9]\+\"\).*/\1/g" | while read -r name; do
+    rg "name=" "$file" | sed -e "s/.*\(name=\"[-._a-zA-Z0-9]\+\"\).*/\1/g" | while read -r name; do
         get_src_path "$name"
         if [[ ! -f "$src_path" ]]; then
             line=0
