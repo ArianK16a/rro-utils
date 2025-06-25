@@ -291,8 +291,8 @@ for RRO_DIR in "$@"; do
             fi
 
             # Don't sort files that don't contain resources
-            if [[ -n $(sed -n "/^<resources/p" "$file") ]]; then
-                if [[ -z $(sed -n "/name=\"/p" "$file") ]]; then
+            if grep -q '^<resources' "$file"; then
+                if [[ -z "$(grep -F 'name="' "$file")" ]]; then
                     echo "$file is empty after moving resources, remove it" > "$log"
                     rm "$file"
                     continue
