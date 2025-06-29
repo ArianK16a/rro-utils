@@ -35,6 +35,10 @@ mkdir -p ./overlay/"$name"
 
 # Copy resources from apktool dump
 cp -r "${TMPDIR}"/out/res ./overlay/"${name}"/
+
+# Delete unwanted test locale value folders
+find "./overlay/${name}/res" -maxdepth 1 -type d -regex "./overlay/${name}/res/values-\(en-rXA\|ar-rXB\).*" -exec rm -rf {} +
+
 rm ./overlay/"${name}"/res/values/public.xml
 # If public.xml was the only file in res/values remove it
 if [[ -z "$(ls -A ./overlay/"${name}"/res/values)" ]]; then
